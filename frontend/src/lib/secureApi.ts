@@ -1448,16 +1448,14 @@ export class SecureAPIClient {
   /**
    * Get dashboard summary for the authenticated tenant.
    */
-  async getDashboardSummary(propertyId: string, options?: { timestamp?: number, month?: number, year?: number }) {
+  async getDashboardSummary(propertyId: string, options?: { month?: number, year?: number }) {
     const queryParams = new URLSearchParams({ property_id: propertyId });
-    if (options?.month) {
+    // 0 is a real value. A falsy check drops it and the API then rejects the request.
+    if (options?.month != null && Number.isFinite(options.month)) {
       queryParams.append('month', String(options.month));
     }
-    if (options?.year) {
+    if (options?.year != null && Number.isFinite(options.year)) {
       queryParams.append('year', String(options.year));
-    }
-    if (options?.timestamp) {
-      queryParams.append('_t', options.timestamp.toString());
     }
 
     return this.request<any>(`/api/v1/dashboard/summary?${queryParams}`);

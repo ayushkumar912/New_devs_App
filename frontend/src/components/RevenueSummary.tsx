@@ -22,12 +22,18 @@ export const RevenueSummary: React.FC<RevenueSummaryProps> = ({ propertyId = 'pr
 
     useEffect(() => {
         const fetchRevenue = async () => {
+            if (!Number.isInteger(month) || month < 1 || month > 12 || !Number.isInteger(year) || year < 2000 || year > 2100) {
+                setLoading(false);
+                setData(null);
+                setError('Enter a month from 1 to 12 and a year.');
+                return;
+            }
             setLoading(true);
+            setError('');
             try {
                 const response = await SecureAPI.getDashboardSummary(propertyId, {
                     month,
                     year,
-                    timestamp: Date.now()
                 });
                 setData(response);
             } catch (err) {
