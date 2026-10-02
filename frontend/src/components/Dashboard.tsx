@@ -11,6 +11,8 @@ const PROPERTIES = [
 
 const Dashboard: React.FC = () => {
   const [selectedProperty, setSelectedProperty] = useState('prop-001');
+  const [month, setMonth] = useState(3);
+  const [year, setYear] = useState(2024);
 
   return (
     <div className="p-4 lg:p-6 min-h-full">
@@ -27,8 +29,32 @@ const Dashboard: React.FC = () => {
                 </p>
               </div>
               
-              {/* Property Selector */}
-              <div className="flex flex-col sm:items-end">
+              <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
+                <div className="flex flex-col">
+                  <label className="text-xs font-medium text-gray-700 mb-1" htmlFor="revenue-month">Month</label>
+                  <input
+                    id="revenue-month"
+                    type="number"
+                    min={1}
+                    max={12}
+                    value={month}
+                    onChange={(e) => setMonth(Number(e.target.value))}
+                    className="block w-full sm:w-24 px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm"
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <label className="text-xs font-medium text-gray-700 mb-1" htmlFor="revenue-year">Year</label>
+                  <input
+                    id="revenue-year"
+                    type="number"
+                    min={2000}
+                    max={2100}
+                    value={year}
+                    onChange={(e) => setYear(Number(e.target.value))}
+                    className="block w-full sm:w-28 px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm"
+                  />
+                </div>
+                <div className="flex flex-col sm:items-end">
                 <label className="text-xs font-medium text-gray-700 mb-1">Select Property</label>
                 <select
                   value={selectedProperty}
@@ -41,12 +67,13 @@ const Dashboard: React.FC = () => {
                     </option>
                   ))}
                 </select>
+                </div>
               </div>
             </div>
           </div>
 
           <div className="space-y-6">
-            <RevenueSummary propertyId={selectedProperty} />
+            <RevenueSummary propertyId={selectedProperty} month={month} year={year} />
           </div>
         </div>
       </div>

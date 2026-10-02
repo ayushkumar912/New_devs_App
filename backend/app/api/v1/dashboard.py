@@ -9,13 +9,17 @@ router = APIRouter()
 @router.get("/dashboard/summary")
 async def get_dashboard_summary(
     property_id: str,
+    month: int,
+    year: int,
     current_user: dict = Depends(get_current_user)
 ) -> Dict[str, Any]:
-    
+    if month < 1 or month > 12:
+        raise HTTPException(status_code=400, detail="month must be between 1 and 12")
+
     tenant_id = getattr(current_user, "tenant_id", "default_tenant") or "default_tenant"
 
     try:
-        revenue_data = await get_revenue_summary(property_id, tenant_id)
+        revenue_data = await get_revenue_summary(property_id, tenant_id, month, year)
     except RevenueUnavailable as exc:
         raise HTTPException(status_code=503, detail="Revenue data is temporarily unavailable") from exc
     
@@ -25,5 +29,7 @@ async def get_dashboard_summary(
         "property_id": revenue_data['property_id'],
         "total_revenue": total_revenue_float,
         "currency": revenue_data['currency'],
-        "reservations_count": revenue_data['count']
+        "reservations_count": revenue_data['count'],
+        "month": month,
+        "year": year,
     }

@@ -35,7 +35,7 @@ class NoMockRevenueTests(unittest.TestCase):
             from app.api.v1 import dashboard as dashboard_api
             from app.services.reservations import RevenueUnavailable
 
-            async def unavailable(property_id, tenant_id):
+            async def unavailable(*_args, **_kwargs):
                 raise RevenueUnavailable("down")
 
             original = dashboard_api.get_revenue_summary
@@ -44,6 +44,8 @@ class NoMockRevenueTests(unittest.TestCase):
                 with self.assertRaises(HTTPException) as caught:
                     await dashboard_api.get_dashboard_summary(
                         "prop-001",
+                        3,
+                        2024,
                         SimpleNamespace(tenant_id="tenant-a"),
                     )
                 self.assertEqual(caught.exception.status_code, 503)

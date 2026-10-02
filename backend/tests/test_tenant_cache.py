@@ -21,9 +21,12 @@ class TenantCacheTests(unittest.TestCase):
                 '{"property_id":"prop-001","tenant_id":"tenant-a","total":"1000.00","currency":"USD","count":3}',
             )
 
-            sunset = await get_revenue_summary("prop-001", "tenant-a")
-            ocean = await get_revenue_summary("prop-001", "tenant-b")
-            sunset_again = await get_revenue_summary("prop-001", "tenant-a")
+            from app.core.database_pool import db_pool
+
+            sunset = await get_revenue_summary("prop-001", "tenant-a", 3, 2024)
+            ocean = await get_revenue_summary("prop-001", "tenant-b", 3, 2024)
+            sunset_again = await get_revenue_summary("prop-001", "tenant-a", 3, 2024)
+            await db_pool.close()
             await redis_client.aclose()
             return sunset, ocean, sunset_again
 

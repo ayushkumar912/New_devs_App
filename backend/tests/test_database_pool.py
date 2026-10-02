@@ -26,9 +26,15 @@ class DatabasePoolTests(unittest.TestCase):
         )
 
     def test_revenue_query_reads_seeded_rows(self):
-        from app.services.reservations import calculate_total_revenue
+        async def run():
+            from app.core.database_pool import db_pool
+            from app.services.reservations import calculate_total_revenue
 
-        result = asyncio.run(calculate_total_revenue("prop-001", "tenant-a"))
+            result = await calculate_total_revenue("prop-001", "tenant-a")
+            await db_pool.close()
+            return result
+
+        result = asyncio.run(run())
 
         self.assertEqual(Decimal(result["total"]), Decimal("2250.000"))
         self.assertEqual(result["count"], 4)
