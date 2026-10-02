@@ -1,5 +1,11 @@
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from typing import Dict, Any, List
+
+
+def to_money(amount) -> str:
+    """Round a numeric amount to cents, half away from zero, and keep it a string."""
+    value = amount if isinstance(amount, Decimal) else Decimal(str(amount))
+    return format(value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP), "f")
 
 
 class RevenueUnavailable(Exception):
@@ -50,7 +56,7 @@ async def calculate_monthly_revenue(property_id: str, tenant_id: str, month: int
             return {
                 "property_id": property_id,
                 "tenant_id": tenant_id,
-                "total": "0.00",
+                "total": to_money(0),
                 "currency": "USD",
                 "count": 0,
                 "month": month,
@@ -60,7 +66,7 @@ async def calculate_monthly_revenue(property_id: str, tenant_id: str, month: int
         return {
             "property_id": property_id,
             "tenant_id": tenant_id,
-            "total": str(Decimal(str(row.total_revenue))),
+            "total": to_money(row.total_revenue),
             "currency": "USD",
             "count": row.reservation_count,
             "month": month,
