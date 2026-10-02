@@ -6,11 +6,18 @@ from app.core.auth import authenticate_request as get_current_user
 
 router = APIRouter()
 
+
+def _require_tenant(current_user) -> str:
+    tenant_id = getattr(current_user, "tenant_id", None)
+    if not tenant_id:
+        raise HTTPException(status_code=403, detail="Tenant is required")
+    return tenant_id
+
 @router.get("/dashboard/properties")
 async def get_dashboard_properties(
     current_user: dict = Depends(get_current_user)
 ) -> Dict[str, Any]:
-    tenant_id = getattr(current_user, "tenant_id", "default_tenant") or "default_tenant"
+    tenant_id = _require_tenant(current_user)
     try:
         properties = await list_tenant_properties(tenant_id)
     except RevenueUnavailable as exc:
@@ -27,7 +34,7 @@ async def get_dashboard_summary(
     if month < 1 or month > 12:
         raise HTTPException(status_code=400, detail="month must be between 1 and 12")
 
-    tenant_id = getattr(current_user, "tenant_id", "default_tenant") or "default_tenant"
+    tenant_id = _require_tenant(current_user)
 
     try:
         property_row = await get_tenant_property(property_id, tenant_id)

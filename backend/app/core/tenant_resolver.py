@@ -4,7 +4,17 @@ Minimal tenant resolver for authentication.
 from typing import Optional
 import logging
 
+from jose import JWTError, jwt
+
+from app.config import settings
+
 logger = logging.getLogger(__name__)
+
+_KNOWN_TENANTS = {
+    "sunset@propertyflow.com": "tenant-a",
+    "ocean@propertyflow.com": "tenant-b",
+    "candidate@propertyflow.com": "tenant-a",
+}
 
 
 class TenantResolver:
@@ -69,27 +79,32 @@ class TenantResolver:
         return None
 
     @staticmethod
-    async def resolve_tenant_id(user_id: str, user_email: str, token: Optional[str] = None) -> str:
+    async def resolve_tenant_id(user_id: str, user_email: str, token: Optional[str] = None) -> Optional[str]:
         """
         Resolve tenant ID for a user.
-        
-        Args:
-            user_id: User ID
-            user_email: User email
-            
-        Returns:
-            Tenant ID
+
+        Unknown users are not assigned a tenant. Callers must reject that case.
         """
-        # Fallback mapping by known user email.
-        if user_email == "sunset@propertyflow.com":
-            return "tenant-a"
-        if user_email == "ocean@propertyflow.com":
-            return "tenant-b"
-        if user_email == "candidate@propertyflow.com":
-            return "tenant-a"
-            
-        # Default fallback
-        return "tenant-a"
+        if token:
+            tenant_id = TenantResolver._tenant_from_bearer(token)
+            if tenant_id:
+                return tenant_id
+
+        return _KNOWN_TENANTS.get((user_email or "").lower())
+
+    @staticmethod
+    def _tenant_from_bearer(token: str) -> Optional[str]:
+        try:
+            payload = jwt.decode(
+                token,
+                settings.secret_key,
+                algorithms=["HS256"],
+                options={"verify_aud": False},
+            )
+        except JWTError:
+            logger.warning("Could not read tenant from access token")
+            return None
+        return TenantResolver.resolve_tenant_from_token(payload)
 
     @staticmethod
     async def update_user_tenant_metadata(user_id: str, tenant_id: str) -> None:
