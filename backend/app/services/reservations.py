@@ -11,6 +11,56 @@ def to_money(amount) -> str:
 class RevenueUnavailable(Exception):
     """Raised when revenue cannot be read from the database."""
 
+async def _db_pool():
+    from app.core.database_pool import db_pool
+
+    if not db_pool.session_factory:
+        await db_pool.initialize()
+    if not db_pool.session_factory:
+        raise RevenueUnavailable("Database pool not available")
+    return db_pool
+
+
+async def list_tenant_properties(tenant_id: str) -> List[Dict[str, Any]]:
+    """Return only the properties owned by this tenant."""
+    from sqlalchemy import text
+
+    pool = await _db_pool()
+    query = text("""
+        SELECT id, name, timezone
+        FROM properties
+        WHERE tenant_id = :tenant_id
+        ORDER BY name
+    """)
+    async with pool.get_session() as session:
+        result = await session.execute(query, {"tenant_id": tenant_id})
+        return [
+            {"id": row.id, "name": row.name, "timezone": row.timezone}
+            for row in result.fetchall()
+        ]
+
+
+async def get_tenant_property(property_id: str, tenant_id: str):
+    """Return the property when it belongs to the tenant, otherwise None."""
+    from sqlalchemy import text
+
+    pool = await _db_pool()
+    query = text("""
+        SELECT id, name, timezone
+        FROM properties
+        WHERE id = :property_id AND tenant_id = :tenant_id
+    """)
+    async with pool.get_session() as session:
+        result = await session.execute(query, {
+            "property_id": property_id,
+            "tenant_id": tenant_id,
+        })
+        row = result.fetchone()
+    if row is None:
+        return None
+    return {"id": row.id, "name": row.name, "timezone": row.timezone}
+
+
 async def calculate_monthly_revenue(property_id: str, tenant_id: str, month: int, year: int) -> Dict[str, Any]:
     """Sum check-ins whose local property date falls in the requested month."""
     if month < 1 or month > 12:
